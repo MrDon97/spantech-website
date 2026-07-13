@@ -1,8 +1,24 @@
 // auth.js
 const GOOGLE_CLIENT_ID = "1097716960217-sakjsskrd14d5in8qga8eisj3j3vjt4b.apps.googleusercontent.com";
-const ADMIN_EMAILS = ["admin@admin.com", "user@gmail.com", "spantech121@gmail.com"]; // Add your Google account email here to test admin access
+const ADMIN_EMAILS = ["admin@admin.com", "user@gmail.com", "spantech121@gmail.com"];
 
 window.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
+
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDeGiDHDsvf8KSOgRPLqf_kNRB0xu5aAJo",
+  authDomain: "spantech-website.firebaseapp.com",
+  projectId: "spantech-website",
+  storageBucket: "spantech-website.firebasestorage.app",
+  messagingSenderId: "1097716960217",
+  appId: "1:1097716960217:web:d6f1e4ba57d5277aa5a7c8"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
 function isUserAdmin(user) {
     return user && ADMIN_EMAILS.includes(user.email);
@@ -18,40 +34,58 @@ const defaultProducts = [
     { name: "Re-Bar Works", description: "Re-bar bending and cutting", imgUrl: "images/rebar.jpg" }
 ];
 
-function getCustomProducts() {
-    const stored = localStorage.getItem('customProducts');
-    let products = stored ? JSON.parse(stored) : [];
-
-    if (!localStorage.getItem('defaultsAdded')) {
-        products = [...defaultProducts, ...products];
-        localStorage.setItem('customProducts', JSON.stringify(products));
-        localStorage.setItem('defaultsAdded', 'true');
+async function getCustomProducts() {
+    try {
+        const snapshot = await db.collection('products').get();
+        if (snapshot.empty) {
+            // Seed defaults if empty
+            const batch = db.batch();
+            defaultProducts.forEach(prod => {
+                const docRef = db.collection('products').doc();
+                batch.set(docRef, prod);
+            });
+            await batch.commit();
+            return defaultProducts;
+        }
+        let products = [];
+        snapshot.forEach(doc => {
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        return products;
+    } catch(e) {
+        console.error("Error fetching products", e);
+        return defaultProducts;
     }
-    return products;
 }
 
-function saveCustomProducts(prods) {
-    localStorage.setItem('customProducts', JSON.stringify(prods));
+async function addCustomProduct(prod) {
+    await db.collection('products').add(prod);
 }
-document.addEventListener('DOMContentLoaded', () => {
-    const isQuotationPage = window.location.pathname.endsWith('quotation.html');
-    if (isQuotationPage && !getCurrentUser()) {
-        window.location.href = 'index.html';
-        return;
+
+async function deleteCustomProduct(id) {
+    await db.collection('products').doc(id).delete();
+}
+
+async function getUsers() {
+    try {
+        const snapshot = await db.collection('users').get();
+        let users = [];
+        snapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+        return users;
+    } catch(e) {
+        console.error("Error fetching users", e);
+        return [];
     }
-    updateNavbar();
-});
-
-function getUsers() {
-    return JSON.parse(localStorage.getItem('users')) || [];
 }
 
-function saveUsers(users) {
-    localStorage.setItem('users', JSON.stringify(users));
+async function deleteUserRecord(id) {
+    await db.collection('users').doc(id).delete();
 }
 
 function getCurrentUser() {
-    return JSON.parse(localStorage.getItem('currentUser'));
+    // Current active session remains in localStorage
+    const stored = localStorage.getItem('currentUser');
+    return stored ? JSON.parse(stored) : null;
 }
 
 function decodeJwt(token) {
@@ -68,57 +102,61 @@ function decodeJwt(token) {
     }
 }
 
-function handleGoogleSignIn(credential) {
+async function handleGoogleSignIn(credential) {
     const payload = decodeJwt(credential);
     if (!payload) {
         alert("Authentication failed: invalid token.");
         return false;
     }
-    return processUserLogin(payload.email, payload.name, payload.picture);
-}
-
-function processUserLogin(email, fullName, picture) {
-    const users = getUsers();
-    let user = users.find(u => u.email === email);
-    
-    if (!user) {
-        user = { 
-            fullName: fullName, 
-            email: email, 
-            picture: picture || "images/avatar-placeholder.png", 
-            registeredAt: new Date().toISOString() 
-        };
-        users.push(user);
-        saveUsers(users);
-    } else {
-        user.fullName = fullName;
-        user.picture = picture || user.picture || "images/avatar-placeholder.png";
-        saveUsers(users);
-    }
-    
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    await processUserLogin(payload.email, payload.name, payload.picture);
+    window.location.reload(); // Refresh the page to show new state
     return true;
 }
 
-// Keep loginUser and registerUser interfaces but map them or deprecate them.
-// We will expose handleGoogleSignIn and processUserLogin for login.html
+async function processUserLogin(email, fullName, picture) {
+    const usersRef = db.collection('users');
+    const q = usersRef.where("email", "==", email);
+    const querySnapshot = await q.get();
+    
+    let userObj = {
+        email: email,
+        fullName: fullName,
+        picture: picture || "images/avatar-placeholder.png"
+    };
+
+    if (querySnapshot.empty) {
+        userObj.registeredAt = new Date().toISOString();
+        await usersRef.add(userObj);
+    } else {
+        const docRef = querySnapshot.docs[0].ref;
+        await docRef.update({
+            fullName: fullName,
+            picture: userObj.picture
+        });
+    }
+    
+    localStorage.setItem('currentUser', JSON.stringify(userObj));
+    return true;
+}
+
 window.handleGoogleSignIn = handleGoogleSignIn;
 window.processUserLogin = processUserLogin;
 window.isUserAdmin = isUserAdmin;
 
-
-function getQuotationHistory() {
-    return JSON.parse(localStorage.getItem('quotationHistory')) || [];
+async function getQuotationHistory() {
+    try {
+        const snapshot = await db.collection('quotations').orderBy('date', 'desc').get();
+        let history = [];
+        snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+        return history;
+    } catch(e) {
+        console.error("Error fetching quotes", e);
+        return [];
+    }
 }
 
-function saveQuotationHistory(history) {
-    localStorage.setItem('quotationHistory', JSON.stringify(history));
-}
-
-function addQuotationRecord(email, product, quantity, date) {
-    const history = getQuotationHistory();
-    history.push({ email, product, quantity, date });
-    saveQuotationHistory(history);
+async function addQuotationRecord(email, product, quantity, date) {
+    await db.collection('quotations').add({ email, product, quantity, date });
 }
 
 function logoutUser(e) {
@@ -129,24 +167,38 @@ function logoutUser(e) {
 
 // Global scope
 window.logoutUser = logoutUser;
+window.getCustomProducts = getCustomProducts;
+window.addCustomProduct = addCustomProduct;
+window.deleteCustomProduct = deleteCustomProduct;
+window.getUsers = getUsers;
+window.deleteUserRecord = deleteUserRecord;
+window.getCurrentUser = getCurrentUser;
+window.getQuotationHistory = getQuotationHistory;
+window.addQuotationRecord = addQuotationRecord;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const isQuotationPage = window.location.pathname.endsWith('quotation.html');
+    if (isQuotationPage && !getCurrentUser()) {
+        window.location.href = 'index.html';
+        return;
+    }
+    updateNavbar();
+});
 
 function updateNavbar() {
     const currentUser = getCurrentUser();
     const isLogged = !!currentUser;
 
-    // Find all relevant links
     const quoteLinks = document.querySelectorAll('a[href="quotation.html"]');
     const loginLinks = document.querySelectorAll('a[href="login.html"]');
     const signupLinks = document.querySelectorAll('a[href="login.html#signup"]');
 
-    // Quotations link
     quoteLinks.forEach(a => {
         if (a.parentElement.tagName === 'LI') {
             a.parentElement.style.display = isLogged ? '' : 'none';
         }
     });
 
-    // Hide Login/Signup
     loginLinks.forEach(a => {
         if (a.parentElement.tagName === 'LI') {
             a.parentElement.style.display = isLogged ? 'none' : '';
@@ -159,28 +211,22 @@ function updateNavbar() {
         }
     });
 
-    // Add admin and logout links for logged in user
     if (isLogged) {
         const uls = document.querySelectorAll('nav ul');
         uls.forEach(ul => {
-            // Check if logout already created to prevent duplication
             if (!ul.querySelector('.auth-extra-btn')) {
                 const isAdmin = isUserAdmin(currentUser);
-
                 const manuBtn = ul.querySelector('.manuButton');
 
                 let adminLi = null;
-                // Admin dashboard link
                 if (isAdmin) {
                     adminLi = document.createElement('li');
                     adminLi.innerHTML = `<a href="admin.html" class="auth-extra-btn">ADMIN</a>`;
                 }
 
-                // Logout link
                 const logoutLi = document.createElement('li');
                 logoutLi.innerHTML = `<a href="#" onclick="logoutUser(event)" class="auth-extra-btn">LOGOUT</a>`;
 
-                // Add hideOnMobile if standard
                 if (ul.querySelector('li.hideOnMobile')) {
                     if (adminLi) adminLi.classList.add('hideOnMobile');
                     logoutLi.classList.add('hideOnMobile');

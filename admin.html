@@ -122,7 +122,9 @@
         <div id="no-products-msg" class="no-records" style="display: none;">No custom products added yet.</div>
     </div>
     
-    <script src="auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
     <script>
         function showSidebar(){
             const sidebar = document.querySelector('.sidebar')
@@ -133,7 +135,6 @@
             sidebar.style.display = 'none'
         }
 
-        // Only let logged in user view it, ideally only admin
         document.addEventListener('DOMContentLoaded', () => {
              const currentUser = getCurrentUser();
              if (!currentUser || !isUserAdmin(currentUser)) {
@@ -144,10 +145,11 @@
              loadProducts();
         });
 
-        function loadUsers() {
-            const users = getUsers();
+        async function loadUsers() {
             const tbody = document.getElementById('users-tbody');
             const noRecordsMsg = document.getElementById('no-records-msg');
+            
+            const users = await getUsers();
             
             tbody.innerHTML = '';
             
@@ -158,73 +160,76 @@
             
             noRecordsMsg.style.display = 'none';
 
-            users.forEach((user, index) => {
+            users.forEach((user) => {
                 const tr = document.createElement('tr');
                 const avatarUrl = user.picture || 'https://lh3.googleusercontent.com/a/default-user=s96-c';
                 tr.innerHTML = `
                     <td style="text-align: center;"><img src="${avatarUrl}" alt="avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; vertical-align: middle;"></td>
                     <td>${user.fullName || 'N/A'}</td>
                     <td>${user.email}</td>
-                    <td><button class="delete-btn" onclick="deleteUser(${index})">Delete</button></td>
+                    <td><button class="delete-btn" onclick="deleteUser('${user.id}')">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function deleteUser(index) {
+        async function deleteUser(id) {
             if(confirm('Are you sure you want to delete this user?')) {
-                const users = getUsers();
-                users.splice(index, 1);
-                saveUsers(users);
+                await deleteUserRecord(id);
                 loadUsers();
             }
         }
         
-        // Expose to window so onclick works
         window.deleteUser = deleteUser;
 
-        function loadProducts() {
-            const products = getCustomProducts();
+        async function loadProducts() {
             const tbody = document.getElementById('products-tbody');
             const noRecordsMsg = document.getElementById('no-products-msg');
+            
+            const products = await getCustomProducts();
+            
             tbody.innerHTML = '';
             if (products.length === 0) {
                 noRecordsMsg.style.display = 'block';
                 return;
             }
             noRecordsMsg.style.display = 'none';
-            products.forEach((p, index) => {
+            products.forEach((p) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><img src="${p.imgUrl}" alt="preview" style="width: 80px; height: 50px; object-fit: cover; border-radius: 5px;"></td>
                     <td>${p.name}</td>
                     <td>${p.description}</td>
-                    <td><button class="delete-btn" onclick="deleteProduct(${index})">Delete</button></td>
+                    <td><button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        window.deleteProduct = function(index) {
+        window.deleteProduct = async function(id) {
             if(confirm('Are you sure you want to delete this product?')) {
-                const products = getCustomProducts();
-                products.splice(index, 1);
-                saveCustomProducts(products);
+                await deleteCustomProduct(id);
                 loadProducts();
             }
         };
 
         const prodForm = document.getElementById('add-product-form');
         if(prodForm) {
-            prodForm.addEventListener('submit', (e) => {
+            prodForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const submitBtn = prodForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Adding...';
+
                 const name = document.getElementById('prod-name').value;
                 const desc = document.getElementById('prod-desc').value;
                 const img = document.getElementById('prod-img').value;
-                const products = getCustomProducts();
-                products.push({ name: name, description: desc, imgUrl: img });
-                saveCustomProducts(products);
+                
+                await addCustomProduct({ name: name, description: desc, imgUrl: img });
+                
                 prodForm.reset();
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Product';
                 loadProducts();
             });
         }

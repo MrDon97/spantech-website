@@ -155,8 +155,9 @@
                     const quantityValue = document.getElementById("quantity").value;
                     const dateValue = new Date().toLocaleDateString();
                     if (typeof addQuotationRecord === 'function') {
-                        addQuotationRecord(emailValue, productValue, quantityValue, dateValue);
-                        if (typeof renderHistory === 'function') renderHistory();
+                        addQuotationRecord(emailValue, productValue, quantityValue, dateValue).then(() => {
+                            if (typeof renderHistory === 'function') renderHistory();
+                        });
                     }
                     alert("You are successfully registered and We will contact you shortly.");
                     this.reset();
@@ -178,11 +179,11 @@
         });
 
 
-        function renderHistory() {
+        async function renderHistory() {
             const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
             if (!currentUser) return;
             
-            const historyObj = typeof getQuotationHistory === 'function' ? getQuotationHistory() : [];
+            const historyObj = typeof getQuotationHistory === 'function' ? await getQuotationHistory() : [];
             const userHistory = historyObj.filter(h => h.email === currentUser.email);
             
             const historySection = document.getElementById("quote-history-section");
@@ -236,10 +237,10 @@
 
             datetimeInput.value = localDatetime;
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 const productSelect = document.getElementById("product-select");
                 if (typeof getCustomProducts === 'function' && productSelect) {
-                    const products = getCustomProducts();
+                    const products = await getCustomProducts();
                     products.forEach(p => {
                         const opt = document.createElement("option");
                         opt.value = p.name;
@@ -260,6 +261,8 @@
 
 
     </script>
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 </body>
 
