@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spantech Quotation page</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+</head>
+
+<body>
+    <nav>
+        <ul class="sidebar">
+            <li onclick="hideSidebar()"><a href="#"><svg xmlns="http://www.w3.org/2000/svg" height="24px"
+                        viewBox="0 -960 960 960" width="24px" fill="#000000">
+                        <path
+                            d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+                    </svg></a></li>
+            <li><a href="about.html">ABOUT</a></li>
+            <li><a href="products.html">PRODUCTS</a></li>
+            <li><a href="contact.html">CONTACT</a></li>
+            <li style="display: none;"><a href="quotation.html">QUOTATIONS</a></li>
+            <li><a href="login.html">LOGIN</a></li>
+        </ul>
+
+
+        <ul>
+            <li><a href="index.html"><svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960"
+                        width="40px" fill="#000000">
+                        <path
+                            d="M120-120v-556.67h163.33V-840h393.34v326.67H840V-120H528.67v-163.33h-97.34V-120H120Zm66.67-66.67h96.66v-96.66h-96.66v96.66Zm0-163.33h96.66v-96.67h-96.66V-350Zm0-163.33h96.66V-610h-96.66v96.67ZM350-350h96.67v-96.67H350V-350Zm0-163.33h96.67V-610H350v96.67Zm0-163.34h96.67v-96.66H350v96.66ZM513.33-350H610v-96.67h-96.67V-350Zm0-163.33H610V-610h-96.67v96.67Zm0-163.34H610v-96.66h-96.67v96.66Zm163.34 490h96.66v-96.66h-96.66v96.66Zm0-163.33h96.66v-96.67h-96.66V-350Z" />
+                    </svg></a></li>
+            <li class="hideOnMobile"><a href="about.html">ABOUT</a></li>
+            <li class="hideOnMobile"><a href="products.html">PRODUCTS</a></li>
+            <li class="hideOnMobile"><a href="contact.html">CONTACT</a></li>
+            <li class="hideOnMobile" style="display: none;"><a href="quotation.html">QUOTATIONS</a></li>
+            <li class="hideOnMobile"><a href="login.html">LOGIN</a></li>
+            <li class="manuButton" onclick="showSidebar()"><a href="#"><svg xmlns="http://www.w3.org/2000/svg"
+                        height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
+                        <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" />
+                    </svg></a></li>
+        </ul>
+
+
+
+
+    </nav>
+
+
+    <section id="registration">
+
+
+        <form id="myForm">
+            <h3>Register for more information</h3>
+            <input type="text" placeholder="Name" name="name" id="name" required>
+            <input type="email" placeholder="Email Address" name="email" id="email">
+            <input type="tel" placeholder="Phone Number" name="phone" id="phone" pattern="[+]?[0-9]{8,15}" title="Please enter a valid phone number (8-15 digits)" required>
+            <select id="product-select" name="Product Request" required>
+                <option value="" disabled selected>Select a Product</option>
+            </select>
+            <input type="number" id="quantity" name="Quantity" placeholder="Quantity Needed" min="1" required>
+            <input type="hidden" id="datetime" name="datetime">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_template" value="table">
+
+            <button class="submit-btn" type="submit" href="index.html">Register</button>
+        </form>
+
+
+
+        </Div>
+
+
+
+
+
+    </section>
+
+    <section id="quote-history-section" style="display: none;">
+        <div class="history-container">
+            <h2>Your Quotation History</h2>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    <!-- History rows will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+    <script>
+        function showSidebar() {
+            const sidebar = document.querySelector('.sidebar')
+            sidebar.style.display = 'flex'
+        }
+        function hideSidebar() {
+            const sidebar = document.querySelector('.sidebar')
+            sidebar.style.display = 'none'
+        }
+
+        document.getElementById("myForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const phoneInput = document.getElementById("phone").value;
+            const quantityInput = document.getElementById("quantity").value;
+
+            const phonePattern = /^[+]?[0-9]{8,15}$/;
+            if (!phonePattern.test(phoneInput)) {
+                alert("Please enter a valid phone number (8-15 digits).");
+                return;
+            }
+            if (parseInt(quantityInput) < 1) {
+                alert("Please enter a valid quantity (1 or more).");
+                return;
+            }
+
+            const submitBtn = this.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const formData = new FormData(this);
+
+            // Replace this URL with your new Google Apps Script URL if you deploy a new one.
+            const scriptURL = "https://script.google.com/macros/s/AKfycbzvDo0iuyd3jjMCsSooktkXz6-ONdy9qtbrDLSP3K5Qa1aDGsjDkMFUSLgAlHzt5PLJ/exec";
+
+            // Submit to Google Script
+            fetch(scriptURL, {
+                method: "POST",
+                body: formData
+            })
+                .then(response => {
+                    const emailValue = document.getElementById("email").value;
+                    const productValue = document.getElementById("product-select").value;
+                    const quantityValue = document.getElementById("quantity").value;
+                    const dateValue = new Date().toLocaleDateString();
+                    if (typeof addQuotationRecord === 'function') {
+                        addQuotationRecord(emailValue, productValue, quantityValue, dateValue);
+                        if (typeof renderHistory === 'function') renderHistory();
+                    }
+                    alert("You are successfully registered and We will contact you shortly.");
+                    this.reset();
+                    // Set the datetime again since reset cleared it
+                    const now = new Date();
+                    const pad = (n) => (n < 10 ? '0' + n : n);
+                    const localDatetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                    document.getElementById("datetime").value = localDatetime;
+
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Register';
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    alert("Something went wrong, please try again.");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Register';
+                });
+        });
+
+
+        function renderHistory() {
+            const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (!currentUser) return;
+            
+            const historyObj = typeof getQuotationHistory === 'function' ? getQuotationHistory() : [];
+            const userHistory = historyObj.filter(h => h.email === currentUser.email);
+            
+            const historySection = document.getElementById("quote-history-section");
+            const tbody = document.getElementById("history-tbody");
+            
+            if (userHistory.length > 0) {
+                historySection.style.display = 'block';
+                tbody.innerHTML = '';
+                userHistory.forEach(h => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${h.date}</td><td>${h.product}</td><td>${h.quantity}</td>`;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                historySection.style.display = 'block';
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 15px;">No previous quotation requests found.</td></tr>';
+            }
+        }
+
+        window.onload = function () {
+            const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+            if (currentUser) {
+                const nameInput = document.getElementById("name");
+                const emailInput = document.getElementById("email");
+                if (nameInput) {
+                    nameInput.value = currentUser.fullName || '';
+                }
+                if (emailInput) {
+                    emailInput.value = currentUser.email || '';
+                    emailInput.readOnly = true;
+                    emailInput.style.backgroundColor = "#e9ecef";
+                }
+                
+                // Render history slightly later to let auth.js load via <script src="auth.js">
+                setTimeout(renderHistory, 150);
+            }
+            const now = new Date();
+            const datetimeInput = document.getElementById("datetime");
+
+            // Pad single digits with leading zero
+            const pad = (n) => (n < 10 ? '0' + n : n);
+
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1); // Months are 0-based
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+
+            // Format for datetime-local: YYYY-MM-DDTHH:MM
+            const localDatetime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+            datetimeInput.value = localDatetime;
+
+            setTimeout(() => {
+                const productSelect = document.getElementById("product-select");
+                if (typeof getCustomProducts === 'function' && productSelect) {
+                    const products = getCustomProducts();
+                    products.forEach(p => {
+                        const opt = document.createElement("option");
+                        opt.value = p.name;
+                        opt.textContent = p.name;
+                        productSelect.appendChild(opt);
+                    });
+                }
+            }, 100);
+        };
+
+
+
+
+
+
+
+
+
+
+    </script>
+<script src="auth.js"></script>
+</body>
+
+</html>
