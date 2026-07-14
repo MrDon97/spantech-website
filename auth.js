@@ -94,6 +94,7 @@ async function signInWithGoogle() {
         return false;
     }
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
         const result = await firebase.auth().signInWithPopup(provider);
         const user = result.user;
