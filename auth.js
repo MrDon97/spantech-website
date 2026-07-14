@@ -6,7 +6,7 @@ window.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDeGiDHDsvf8KSOgRPLqf_kNRB0xu5aAJo",
+  apiKey: "AIzaSyDeGiDHDsvf8KS0gRPLqf_kNRBOxu5aAJo",
   authDomain: "spantech-website.firebaseapp.com",
   projectId: "spantech-website",
   storageBucket: "spantech-website.firebasestorage.app",
