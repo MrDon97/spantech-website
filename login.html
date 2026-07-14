@@ -141,7 +141,10 @@
             
             <!-- Google Sign-in Button Target -->
             <div class="g-btn-wrapper">
-                <div id="google-signin-btn"></div>
+                <button id="firebase-google-btn" style="background: white; color: #444; border: none; border-radius: 30px; padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 280px; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s; font-family: var(--font-primary);">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width: 20px; height: 20px;" alt="Google">
+                    Sign in with Google
+                </button>
             </div>
 
             <!-- Warning and Bypass (Shown only if Client ID is placeholder) -->
@@ -162,11 +165,10 @@
         </div>
     </div>
 
-    <!-- Load Google Identity Services SDK -->
-    <script src="https://accounts.google.com/gsi/client"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-<script src="auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
     <script>
         function showSidebar(){
             const sidebar = document.querySelector('.sidebar')
@@ -177,13 +179,6 @@
             sidebar.style.display = 'none'
         }
 
-        window.handleCredentialResponse = async function(response) {
-            if (typeof handleGoogleSignIn === 'function') {
-                const success = await handleGoogleSignIn(response.credential);
-                if (success) window.location.href = 'index.html';
-            }
-        };
-
         window.bypassLogin = async function(email, name, picture) {
             if (typeof processUserLogin === 'function') {
                 const success = await processUserLogin(email, name, picture);
@@ -192,7 +187,7 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Check if user is already logged in
+            // Check if user is already logged in locally
             let currentUser = null;
             try {
                 if (typeof getCurrentUser === 'function') {
@@ -207,45 +202,22 @@
                 return;
             }
 
-            // Safely fetch Client ID
-            let clientId = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-            try {
-                if (typeof GOOGLE_CLIENT_ID !== 'undefined') {
-                    clientId = GOOGLE_CLIENT_ID;
-                } else if (window.GOOGLE_CLIENT_ID) {
-                    clientId = window.GOOGLE_CLIENT_ID;
-                }
-            } catch (e) {
-                console.error("Error reading GOOGLE_CLIENT_ID:", e);
-            }
-            
-            // Show Developer Bypass panel if GOOGLE_CLIENT_ID is not configured
-            if (!clientId || clientId.includes("YOUR_GOOGLE_CLIENT_ID")) {
-                const warningBox = document.getElementById('client-id-warning');
-                if (warningBox) warningBox.classList.remove('hidden');
-            }
-
-            // Initialize GIS SDK
-            try {
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                    google.accounts.id.initialize({
-                        client_id: clientId,
-                        callback: handleCredentialResponse
-                    });
-                    google.accounts.id.renderButton(
-                        document.getElementById("google-signin-btn"),
-                        { theme: "filled_black", size: "large", shape: "pill", width: 280 }
-                    );
-                } else {
-                    console.warn("Google SDK not loaded yet. Handled in page.");
-                    // Keep bypass visible since Google script hasn't loaded
-                    const warningBox = document.getElementById('client-id-warning');
-                    if (warningBox) warningBox.classList.remove('hidden');
-                }
-            } catch (err) {
-                console.warn("Could not load Google Sign-In SDK (likely offline or blocked). Bypass login is available.", err);
-                const warningBox = document.getElementById('client-id-warning');
-                if (warningBox) warningBox.classList.remove('hidden');
+            const googleBtn = document.getElementById('firebase-google-btn');
+            if (googleBtn) {
+                googleBtn.addEventListener('click', async () => {
+                    googleBtn.disabled = true;
+                    googleBtn.innerHTML = 'Signing in...';
+                    if (typeof signInWithGoogle === 'function') {
+                        const success = await signInWithGoogle();
+                        if (success) window.location.href = 'index.html';
+                    }
+                    googleBtn.disabled = false;
+                    googleBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width: 20px; height: 20px;" alt="Google"> Sign in with Google';
+                });
+                
+                // Hover effects
+                googleBtn.addEventListener('mouseenter', () => googleBtn.style.transform = 'translateY(-2px)');
+                googleBtn.addEventListener('mouseleave', () => googleBtn.style.transform = 'translateY(0)');
             }
         });
     </script>

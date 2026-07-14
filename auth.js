@@ -88,28 +88,22 @@ function getCurrentUser() {
     return stored ? JSON.parse(stored) : null;
 }
 
-function decodeJwt(token) {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    } catch (e) {
-        console.error("Failed to decode JWT:", e);
-        return null;
-    }
-}
-
-async function handleGoogleSignIn(credential) {
-    const payload = decodeJwt(credential);
-    if (!payload) {
-        alert("Authentication failed: invalid token.");
+async function signInWithGoogle() {
+    if (!firebase.auth) {
+        alert("Firebase Auth SDK not loaded!");
         return false;
     }
-    await processUserLogin(payload.email, payload.name, payload.picture);
-    return true;
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+        const result = await firebase.auth().signInWithPopup(provider);
+        const user = result.user;
+        await processUserLogin(user.email, user.displayName, user.photoURL);
+        return true;
+    } catch (error) {
+        console.error("Firebase Auth Error:", error);
+        alert("Authentication failed: " + error.message);
+        return false;
+    }
 }
 
 async function processUserLogin(email, fullName, picture) {
@@ -142,7 +136,7 @@ async function processUserLogin(email, fullName, picture) {
     return true;
 }
 
-window.handleGoogleSignIn = handleGoogleSignIn;
+window.signInWithGoogle = signInWithGoogle;
 window.processUserLogin = processUserLogin;
 window.isUserAdmin = isUserAdmin;
 
@@ -164,8 +158,15 @@ async function addQuotationRecord(email, product, quantity, date) {
 
 function logoutUser(e) {
     if (e) e.preventDefault();
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html'; // Redirect to home on logout
+    if (firebase.auth) {
+        firebase.auth().signOut().then(() => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html'; // Redirect to home on logout
+        }).catch(err => console.error("Logout error", err));
+    } else {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    }
 }
 
 // Global scope
@@ -178,6 +179,18 @@ window.deleteUserRecord = deleteUserRecord;
 window.getCurrentUser = getCurrentUser;
 window.getQuotationHistory = getQuotationHistory;
 window.addQuotationRecord = addQuotationRecord;
+
+async function uploadProductImage(file) {
+    if (!firebase.storage) {
+        throw new Error("Firebase Storage SDK not loaded.");
+    }
+    const storageRef = firebase.storage().ref();
+    const fileName = `products/${Date.now()}_${file.name}`;
+    const fileRef = storageRef.child(fileName);
+    await fileRef.put(file);
+    return await fileRef.getDownloadURL();
+}
+window.uploadProductImage = uploadProductImage;
 
 document.addEventListener('DOMContentLoaded', () => {
     const isQuotationPage = window.location.pathname.endsWith('quotation.html');
