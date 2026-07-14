@@ -68,8 +68,8 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const customProducts = getCustomProducts();
+        document.addEventListener('DOMContentLoaded', async () => {
+            const customProducts = await getCustomProducts();
             const prodBox = document.querySelector('.product-box');
             if (prodBox && customProducts.length > 0) {
                 customProducts.forEach(p => {

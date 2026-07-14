@@ -109,30 +109,33 @@ async function handleGoogleSignIn(credential) {
         return false;
     }
     await processUserLogin(payload.email, payload.name, payload.picture);
-    window.location.reload(); // Refresh the page to show new state
     return true;
 }
 
 async function processUserLogin(email, fullName, picture) {
-    const usersRef = db.collection('users');
-    const q = usersRef.where("email", "==", email);
-    const querySnapshot = await q.get();
-    
     let userObj = {
         email: email,
         fullName: fullName,
         picture: picture || "images/avatar-placeholder.png"
     };
 
-    if (querySnapshot.empty) {
-        userObj.registeredAt = new Date().toISOString();
-        await usersRef.add(userObj);
-    } else {
-        const docRef = querySnapshot.docs[0].ref;
-        await docRef.update({
-            fullName: fullName,
-            picture: userObj.picture
-        });
+    try {
+        const usersRef = db.collection('users');
+        const q = usersRef.where("email", "==", email);
+        const querySnapshot = await q.get();
+        
+        if (querySnapshot.empty) {
+            userObj.registeredAt = new Date().toISOString();
+            await usersRef.add(userObj);
+        } else {
+            const docRef = querySnapshot.docs[0].ref;
+            await docRef.update({
+                fullName: fullName,
+                picture: userObj.picture
+            });
+        }
+    } catch (error) {
+        console.warn("Could not save user to Firestore (might be permission issue). Proceeding with local login.", error);
     }
     
     localStorage.setItem('currentUser', JSON.stringify(userObj));

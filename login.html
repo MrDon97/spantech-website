@@ -177,16 +177,17 @@
             sidebar.style.display = 'none'
         }
 
-        // Initialize Google Sign-In
-        window.handleCredentialResponse = function(response) {
-            if (typeof handleGoogleSignIn === 'function' && handleGoogleSignIn(response.credential)) {
-                window.location.href = 'index.html';
+        window.handleCredentialResponse = async function(response) {
+            if (typeof handleGoogleSignIn === 'function') {
+                const success = await handleGoogleSignIn(response.credential);
+                if (success) window.location.href = 'index.html';
             }
         };
 
-        window.bypassLogin = function(email, name, picture) {
-            if (typeof processUserLogin === 'function' && processUserLogin(email, name, picture)) {
-                window.location.href = 'index.html';
+        window.bypassLogin = async function(email, name, picture) {
+            if (typeof processUserLogin === 'function') {
+                const success = await processUserLogin(email, name, picture);
+                if (success) window.location.href = 'index.html';
             }
         };
 
