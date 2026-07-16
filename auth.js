@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDeGiDHDsvf8KS0gRPLqf_kNRBOxu5aAJo",
   authDomain: "spantech-website.firebaseapp.com",
   projectId: "spantech-website",
-  storageBucket: "spantech-website.firebasestorage.app",
+  storageBucket: "spantech-website.appspot.com",
   messagingSenderId: "1097716960217",
   appId: "1:1097716960217:web:d6f1e4ba57d5277aa5a7c8"
 };
