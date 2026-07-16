@@ -167,7 +167,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
     <script src="auth.js?v=2"></script>
     <script>
         function showSidebar(){
@@ -362,14 +361,12 @@
                 }
 
                 try {
-                    submitBtn.textContent = 'Resizing...';
+                    submitBtn.textContent = 'Processing Image...';
                     const resizedBlob = await resizeImage(file, 800);
-                    const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg', lastModified: Date.now() });
-
-                    submitBtn.textContent = 'Uploading...';
-                    const imgUrl = await uploadProductImage(resizedFile);
                     
-                    submitBtn.textContent = 'Saving...';
+                    submitBtn.textContent = 'Saving to Database...';
+                    const imgUrl = await blobToBase64(resizedBlob);
+                    
                     await addCustomProduct({ name: name, description: desc, imgUrl: imgUrl });
                     
                     prodForm.reset();
@@ -378,7 +375,7 @@
                     loadProducts();
                 } catch (error) {
                     console.error("Error adding product", error);
-                    alert("Failed to add product. Make sure Firebase Storage rules allow uploads.");
+                    alert("Failed to add product. Make sure Firestore rules allow uploads.");
                 } finally {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Add Product';
@@ -406,6 +403,16 @@
                 }
             });
         }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
 
         function resizeImage(file, maxWidth) {
             return new Promise((resolve, reject) => {

@@ -181,17 +181,6 @@ window.getCurrentUser = getCurrentUser;
 window.getQuotationHistory = getQuotationHistory;
 window.addQuotationRecord = addQuotationRecord;
 
-async function uploadProductImage(file) {
-    if (!firebase.storage) {
-        throw new Error("Firebase Storage SDK not loaded.");
-    }
-    const storageRef = firebase.storage().ref();
-    const fileName = `products/${Date.now()}_${file.name}`;
-    const fileRef = storageRef.child(fileName);
-    await fileRef.put(file);
-    return await fileRef.getDownloadURL();
-}
-window.uploadProductImage = uploadProductImage;
 
 document.addEventListener('DOMContentLoaded', () => {
     const isQuotationPage = window.location.pathname.endsWith('quotation.html');
