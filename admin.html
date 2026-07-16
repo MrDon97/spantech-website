@@ -321,7 +321,20 @@
                 return;
             }
             noRecordsMsg.style.display = 'none';
-            products.forEach((p) => {
+            
+            const seenNames = new Set();
+            
+            for (let i = 0; i < products.length; i++) {
+                const p = products[i];
+                
+                if (seenNames.has(p.name)) {
+                    // It's a duplicate! Delete it from the cloud database
+                    await deleteCustomProduct(p.id);
+                    continue; // Skip rendering this duplicate
+                }
+                
+                seenNames.add(p.name);
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><img src="${p.imgUrl}" alt="preview" style="width: 80px; height: 50px; object-fit: cover; border-radius: 5px;"></td>
@@ -330,7 +343,7 @@
                     <td><button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
-            });
+            }
         }
 
         window.deleteProduct = async function(id) {
