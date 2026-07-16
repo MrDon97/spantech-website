@@ -372,6 +372,7 @@
                     prodForm.reset();
                     document.getElementById('image-preview').style.display = 'none';
                     document.getElementById('drop-text').textContent = 'Drag & Drop a product photo here, or click to select';
+                    alert("Product added successfully!");
                     loadProducts();
                 } catch (error) {
                     console.error("Error adding product", error);
