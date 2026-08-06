@@ -147,7 +147,8 @@
             // Submit to Google Script
             fetch(scriptURL, {
                 method: "POST",
-                body: formData
+                body: formData,
+                mode: 'no-cors'
             })
                 .then(response => {
                     const emailValue = document.getElementById("email").value;
@@ -155,8 +156,13 @@
                     const quantityValue = document.getElementById("quantity").value;
                     const dateValue = new Date().toLocaleDateString();
                     if (typeof addQuotationRecord === 'function') {
-                        addQuotationRecord(emailValue, productValue, quantityValue, dateValue).then(() => {
+                        addQuotationRecord(emailValue, productValue, quantityValue, dateValue)
+                        .then(() => {
                             if (typeof renderHistory === 'function') renderHistory();
+                        })
+                        .catch(err => {
+                            console.error("Firebase Error:", err);
+                            alert("Database error: " + err.message);
                         });
                     }
                     alert("You are successfully registered and We will contact you shortly.");
@@ -172,7 +178,7 @@
                 })
                 .catch(error => {
                     console.error('Error!', error.message);
-                    alert("Something went wrong, please try again.");
+                    alert("Something went wrong with the Google Script, please try again.");
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Register';
                 });
@@ -217,8 +223,15 @@
                     emailInput.style.backgroundColor = "#e9ecef";
                 }
                 
-                // Render history slightly later to let auth.js load via <script src="auth.js">
-                setTimeout(renderHistory, 150);
+                // Render history but wait for Firebase Auth to initialize!
+                if (window.firebase && firebase.auth) {
+                    const unsub = firebase.auth().onAuthStateChanged(() => {
+                        unsub();
+                        renderHistory();
+                    });
+                } else {
+                    setTimeout(renderHistory, 1500); // Fallback
+                }
             }
             const now = new Date();
             const datetimeInput = document.getElementById("datetime");
