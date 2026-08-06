@@ -28,8 +28,8 @@ service cloud.firestore {
 
     // Quotations Collection
     match /quotations/{quoteId} {
-      // Admins can read all quotations
-      allow read: if isAdmin();
+      // Admins can read all quotations, users can read their own
+      allow read: if isAdmin() || (request.auth != null && request.auth.token.email == resource.data.email);
       
       // Any logged-in user can submit a quotation
       allow create: if request.auth != null;

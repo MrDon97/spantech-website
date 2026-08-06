@@ -161,9 +161,25 @@ window.isUserAdmin = isUserAdmin;
 
 async function getQuotationHistory() {
     try {
-        const snapshot = await db.collection('quotations').orderBy('date', 'desc').get();
+        const currentUser = getCurrentUser();
+        if (!currentUser) return [];
+
+        let snapshot;
+        if (isUserAdmin(currentUser)) {
+            snapshot = await db.collection('quotations').orderBy('date', 'desc').get();
+        } else {
+            // Normal users can only read their own quotes (query must match the security rule exactly)
+            snapshot = await db.collection('quotations').where("email", "==", currentUser.email).get();
+        }
+
         let history = [];
         snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+        
+        if (!isUserAdmin(currentUser)) {
+            // Sort client-side to avoid needing a Firestore composite index
+            history.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
         return history;
     } catch(e) {
         console.error("Error fetching quotes", e);
