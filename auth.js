@@ -1,6 +1,6 @@
 // auth.js
 const GOOGLE_CLIENT_ID = "1097716960217-sakjsskrd14d5in8qga8eisj3j3vjt4b.apps.googleusercontent.com";
-const ADMIN_EMAILS = ["admin@admin.com", "user@gmail.com", "spantech121@gmail.com"];
+const ADMIN_EMAILS = ["spantech121@gmail.com"];
 
 window.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 
@@ -59,11 +59,23 @@ async function getCustomProducts() {
 }
 
 async function addCustomProduct(prod) {
-    await db.collection('products').add(prod);
+    try {
+        await db.collection('products').add(prod);
+    } catch(e) {
+        console.error("Error adding product:", e);
+        alert("Action denied: You might not have admin privileges.");
+        throw e;
+    }
 }
 
 async function deleteCustomProduct(id) {
-    await db.collection('products').doc(id).delete();
+    try {
+        await db.collection('products').doc(id).delete();
+    } catch(e) {
+        console.error("Error deleting product:", e);
+        alert("Action denied: You might not have admin privileges.");
+        throw e;
+    }
 }
 
 async function getUsers() {
@@ -79,7 +91,13 @@ async function getUsers() {
 }
 
 async function deleteUserRecord(id) {
-    await db.collection('users').doc(id).delete();
+    try {
+        await db.collection('users').doc(id).delete();
+    } catch(e) {
+        console.error("Error deleting user:", e);
+        alert("Action denied: You might not have admin privileges.");
+        throw e;
+    }
 }
 
 function getCurrentUser() {
