@@ -184,9 +184,14 @@
                  window.location.href = 'index.html';
                  return;
              }
-             loadUsers();
-             loadProducts();
-             loadOrdersAnalytics();
+             
+             // Wait for Firebase Auth to fully initialize before making admin calls
+             const unsub = firebase.auth().onAuthStateChanged((user) => {
+                 unsub(); // Stop listening after the first trigger
+                 loadUsers();
+                 loadProducts();
+                 loadOrdersAnalytics();
+             });
         });
 
         async function loadOrdersAnalytics() {
